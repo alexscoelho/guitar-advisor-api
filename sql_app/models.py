@@ -3,7 +3,6 @@ from sqlalchemy.orm import relationship
 
 from .database import Base
 
-
 class User(Base):
     __tablename__ = "users"
 
@@ -13,7 +12,7 @@ class User(Base):
     hashed_password = Column(String)
     created_at = Column(DateTime)
 
-    liked_guitars = relationship("Like", back_populates="user_id")
+    # liked_guitars = relationship("Like", back_populates="user_id")
 
 
 class Guitar(Base):
@@ -28,8 +27,8 @@ class Guitar(Base):
     image_url = Column(String)
     created_at = Column(DateTime)
 
-    reviews = relationship("Review", back_populates="guitar_id")
-    likes = relationship("Like", back_populates="guitar_id")
+    # reviews = relationship("Review", back_populates="guitar_id")
+    # likes = relationship("Like", back_populates="guitar_id")
     
 
 class Review(Base):
