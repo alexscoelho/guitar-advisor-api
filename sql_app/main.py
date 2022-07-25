@@ -55,3 +55,11 @@ def read_guitars(skip: int = 0, limit: int = 100, db: Session = Depends(get_db))
 @app.post("/guitars/", response_model=schemas.Guitar)
 def create_guitar(guitar: schemas.GuitarCreate, db: Session = Depends(get_db)):
     return crud.create_guitar(db=db, guitar=guitar)
+
+@app.post("/likes/", response_model=schemas.Like)
+def create_like(like: schemas.LikeCreate, db: Session = Depends(get_db)):
+    return crud.create_like(db=db, like=like)
+
+@app.post("/reviews/", response_model=schemas.Review)
+def create_review(review: schemas.ReviewCreate, db: Session = Depends(get_db)):
+    return crud.create_review(db=db, review=review)

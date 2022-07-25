@@ -49,7 +49,6 @@ class Like(Base):
     __tablename__ = "likes"
 
     id = Column(Integer, primary_key=True, index=True)
-    quantity = Column(Integer)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     guitar_id = Column(Integer, ForeignKey("guitars.id"))

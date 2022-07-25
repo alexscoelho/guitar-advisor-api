@@ -20,7 +20,6 @@ class Review(ReviewBase):
         orm_mode = True
 
 class LikeBase(BaseModel):
-    quantity: str
     guitar_id: int
     user_id: int
 
