@@ -12,7 +12,7 @@ class User(Base):
     hashed_password = Column(String)
     created_at = Column(DateTime)
 
-    # liked_guitars = relationship("Like", back_populates="user_id")
+    liked_guitars = relationship("Like", back_populates="user")
 
 
 class Guitar(Base):
@@ -27,8 +27,8 @@ class Guitar(Base):
     image_url = Column(String)
     created_at = Column(DateTime)
 
-    # reviews = relationship("Review", back_populates="guitar_id")
-    # likes = relationship("Like", back_populates="guitar_id")
+    reviews = relationship("Review", back_populates="guitar")
+    likes = relationship("Like", back_populates="guitar")
     
 
 class Review(Base):
@@ -42,6 +42,8 @@ class Review(Base):
     guitar_id = Column(Integer, ForeignKey("guitars.id"))
     user_id = Column(Integer, ForeignKey("users.id"))
 
+    guitar = relationship("Guitar", back_populates="reviews")
+
 class Like(Base):
     __tablename__ = "likes"
 
@@ -51,3 +53,6 @@ class Like(Base):
 
     guitar_id = Column(Integer, ForeignKey("guitars.id"))
     user_id = Column(Integer, ForeignKey("users.id"))
+
+    user = relationship("User", back_populates="liked_guitars")
+    guitar = relationship("Guitar", back_populates="likes")
