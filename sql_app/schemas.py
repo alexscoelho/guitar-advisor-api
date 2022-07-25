@@ -1,4 +1,5 @@
-from typing import List, Union
+from typing import List
+from datetime import datetime
 
 from pydantic import BaseModel
 
@@ -13,7 +14,7 @@ class ReviewCreate(ReviewBase):
 
 class Review(ReviewBase):
     id: int
-    created_at: str
+    created_at: datetime
 
     class Config:
         orm_mode = True
@@ -28,7 +29,7 @@ class LikeCreate(LikeBase):
 
 class Like(LikeBase):
     id: int
-    created_at: str
+    created_at: datetime
 
     class Config:
         orm_mode = True
@@ -46,7 +47,7 @@ class GuitarCreate(GuitarBase):
 
 class Guitar(GuitarBase):
     id: int
-    created_at: str
+    created_at: datetime
     reviews: List[Review] = []
     likes: List[Like] = []
 
@@ -62,7 +63,7 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     id: int
-    created_at: str
+    created_at: datetime
     liked_guitars: List[Like] = []
 
     class Config:
