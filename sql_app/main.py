@@ -1,13 +1,11 @@
 from typing import List
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, status
 from sqlalchemy.orm import Session
 
 from . import crud, models, schemas
 from .database import SessionLocal, engine
-from fastapi.security import OAuth2PasswordBearer
-
-from .schemas import UserBase
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -22,23 +20,42 @@ def get_db():
     finally:
         db.close()
 
+def fake_hash_password(password: str):
+    return password + "notreallyhashed" 
 
 @app.get("/")
 async def root():
     return {"msg": "Hello World"}
 
 def fake_decode_token(token):
-    return UserBase(
+    return schemas.UserBase(
         username=token + "fakedecoded", email="john@example.com"
     )
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     user = fake_decode_token(token)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return user
 
 @app.get("/users/me")
-async def read_users_me(current_user: UserBase = Depends(get_current_user)):
+async def read_users_me(current_user: schemas.UserBase = Depends(get_current_user)):
     return current_user
+
+@app.post("/token")
+async def login(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
+    user = crud.get_user_by_username(db, username = form_data.username)
+    if not user:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    hashed_password = fake_hash_password(form_data.password)
+    if not hashed_password == user.hashed_password:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    
+    return {"access_token": user.username, "token_type": "bearer"}
 
 
 @app.post("/users/", response_model=schemas.User)

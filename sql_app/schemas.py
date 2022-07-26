@@ -57,6 +57,9 @@ class UserBase(BaseModel):
     email: str
     username: str
 
+class UserInDB(UserBase):
+    hashed_password: str
+
 class UserCreate(UserBase):
     password: str
 
