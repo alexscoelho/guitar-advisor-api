@@ -5,10 +5,14 @@ from sqlalchemy.orm import Session
 
 from . import crud, models, schemas
 from .database import SessionLocal, engine
+from fastapi.security import OAuth2PasswordBearer
+
+from .schemas import UserBase
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Dependency
 def get_db():
@@ -22,6 +26,19 @@ def get_db():
 @app.get("/")
 async def root():
     return {"msg": "Hello World"}
+
+def fake_decode_token(token):
+    return UserBase(
+        username=token + "fakedecoded", email="john@example.com"
+    )
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    user = fake_decode_token(token)
+    return user
+
+@app.get("/users/me")
+async def read_users_me(current_user: UserBase = Depends(get_current_user)):
+    return current_user
 
 
 @app.post("/users/", response_model=schemas.User)
