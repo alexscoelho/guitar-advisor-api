@@ -25,6 +25,9 @@ def create_guitar(db: Session, guitar: schemas.GuitarCreate):
 def get_guitars(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Guitar).offset(skip).limit(limit).all()
 
+def get_guitar(db: Session, guitar_id: int):
+    return db.query(models.Guitar).filter(models.Guitar.id == guitar_id).first()
+
 
 def create_review(db: Session, review: schemas.ReviewCreate):
     db_review = models.Review(**review.dict())

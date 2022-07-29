@@ -131,6 +131,13 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
 
+@app.get("/guitars/{guitar_id}", response_model=schemas.Guitar)
+def read_guitar(guitar_id: int, db: Session = Depends(get_db)):
+    db_guitar = crud.get_guitar(db, guitar_id=guitar_id)
+    if db_guitar is None:
+        raise HTTPException(status_code=404, detail="Guitar not found")
+    return db_guitar
+
 
 @app.get("/guitars/", response_model=List[schemas.Guitar])
 def read_guitars(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
