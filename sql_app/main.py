@@ -1,7 +1,7 @@
 from typing import List, Union
 from datetime import datetime, timedelta
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status, Header
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -86,7 +86,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     if user is None:
         raise credentials_exception
     return user
-    
+
 
 @app.get("/users/me", response_model=schemas.User)
 async def read_users_me(current_user: schemas.UserBase = Depends(get_current_user)):
@@ -139,6 +139,7 @@ def read_guitar(guitar_id: int, db: Session = Depends(get_db)):
     return db_guitar
 
 
+# @app.get("/guitars/", response_model=List[schemas.Guitar], dependencies=[Depends(get_current_user)])
 @app.get("/guitars/", response_model=List[schemas.Guitar])
 def read_guitars(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     guitars = crud.get_guitars(db, skip=skip, limit=limit)
