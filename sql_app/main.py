@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from sqlalchemy.orm import Session
+from fastapi.middleware.cors import CORSMiddleware
 
 from . import crud, models, schemas
 from .database import SessionLocal, engine
@@ -19,6 +20,14 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Dependency
 def get_db():
@@ -86,6 +95,7 @@ async def read_users_me(current_user: schemas.UserBase = Depends(get_current_use
 @app.post("/token", response_model=schemas.Token)
 async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
     user = authenticate_user(db, form_data.username, form_data.password)
+    
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

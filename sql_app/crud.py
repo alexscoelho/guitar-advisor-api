@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from . import models, schemas
 
 def get_users(db: Session, skip: int = 0, limit: int = 100):
-    print(type(db))
     return db.query(models.User).offset(skip).limit(limit).all()
 
 def get_user(db: Session, user_id: int):
