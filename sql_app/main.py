@@ -1,7 +1,9 @@
 from typing import List, Union
 from datetime import datetime, timedelta
 
-from fastapi import Depends, FastAPI, HTTPException, status, Header
+
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -59,9 +61,22 @@ def authenticate_user(db: Session = Depends(get_db), username: str = "", passwor
         return False
     return user
 
-@app.get("/")
+def generate_html_response():
+    html_content = """
+    <html>
+        <head>
+            <title>Some HTML in here</title>
+        </head>
+        <body>
+            <h1>Hello World!!</h1>
+        </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content, status_code=200)
+
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    return {"msg": "Hello World"}
+    return generate_html_response()
 
 def fake_decode_token(token):
     return schemas.UserBase(
@@ -148,6 +163,10 @@ def read_guitars(skip: int = 0, limit: int = 100, db: Session = Depends(get_db))
 @app.post("/guitars/", response_model=schemas.Guitar)
 def create_guitar(guitar: schemas.GuitarCreate, db: Session = Depends(get_db)):
     return crud.create_guitar(db=db, guitar=guitar)
+
+@app.delete("/guitars/{guitar_id}")
+def delete_guitar(guitar_id: int, db: Session = Depends(get_db)):
+    return crud.delete_guitar(db=db, guitar_id=guitar_id)
 
 @app.post("/likes/", response_model=schemas.Like)
 def create_like(like: schemas.LikeCreate, db: Session = Depends(get_db)):

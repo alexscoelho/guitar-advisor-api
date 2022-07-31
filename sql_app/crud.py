@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from fastapi import HTTPException
 from . import models, schemas
 
 def get_users(db: Session, skip: int = 0, limit: int = 100):
@@ -28,6 +29,12 @@ def get_guitars(db: Session, skip: int = 0, limit: int = 100):
 def get_guitar(db: Session, guitar_id: int):
     return db.query(models.Guitar).filter(models.Guitar.id == guitar_id).first()
 
+def delete_guitar(db: Session, guitar_id: int):
+    db_guitar = db.query(models.Guitar).filter(models.Guitar.id == guitar_id).delete()
+    if db_guitar == 0:
+        raise HTTPException(status_code=404, detail="Item not found")
+    db.commit()
+    return {"guitar_deleted": guitar_id}
 
 def create_review(db: Session, review: schemas.ReviewCreate):
     db_review = models.Review(**review.dict())
