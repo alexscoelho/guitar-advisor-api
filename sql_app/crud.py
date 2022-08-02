@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from typing import List, Union
 
 from fastapi import HTTPException
 from . import models, schemas
@@ -23,8 +24,12 @@ def create_guitar(db: Session, guitar: schemas.GuitarCreate):
     db.refresh(db_guitar)
     return db_guitar
 
-def get_guitars(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Guitar).offset(skip).limit(limit).all()
+def get_guitars(db: Session, skip: int = 0, limit: int = 100, q: Union[str, None] = None):
+    if q:
+        guitars = db.query(models.Guitar).filter(models.Guitar.brand==q).all()
+        return guitars
+    guitars = db.query(models.Guitar).offset(skip).limit(limit).all()
+    return guitars
 
 def get_guitar(db: Session, guitar_id: int):
     return db.query(models.Guitar).filter(models.Guitar.id == guitar_id).first()

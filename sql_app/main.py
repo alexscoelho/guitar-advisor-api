@@ -156,8 +156,8 @@ def read_guitar(guitar_id: int, db: Session = Depends(get_db)):
 
 # @app.get("/guitars/", response_model=List[schemas.Guitar], dependencies=[Depends(get_current_user)])
 @app.get("/guitars/", response_model=List[schemas.Guitar])
-def read_guitars(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    guitars = crud.get_guitars(db, skip=skip, limit=limit)
+def read_guitars(q: Union[str, None] = None, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):    
+    guitars = crud.get_guitars(db, skip=skip, limit=limit, q=q)
     return guitars
 
 @app.post("/guitars/", response_model=schemas.Guitar)
