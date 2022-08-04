@@ -1,8 +1,10 @@
 from typing import List, Union
 from datetime import datetime, timedelta
+from pydantic import BaseSettings
+import os
 
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status, Request, UploadFile, File
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,6 +14,27 @@ from .database import SessionLocal, engine
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+
+class Settings(BaseSettings):
+    cloud_name: str 
+    api_key: str
+    api_secret: str 
+
+    class Config:
+        env_file = ".env"
+settings = Settings()
+
+# cloudinary
+import cloudinary
+cloudinary.config( 
+  cloud_name = settings.cloud_name, 
+  api_key = settings.api_key, 
+  api_secret = settings.api_secret,
+  secure = True
+)
+
+import cloudinary.uploader
+import cloudinary.api
 
 SECRET_KEY = "c6b44138ac4d698905bfd995ae31766f45ef0d6a843319517748802305e3a4f3"
 ALGORITHM = "HS256"
@@ -75,7 +98,11 @@ def generate_html_response():
     return HTMLResponse(content=html_content, status_code=200)
 
 @app.get("/", response_class=HTMLResponse)
-async def root():
+async def root(request:Request):
+    client_host = request.client.host
+    name = os.getenv("MY_NAME", "World")
+    print(f"Hello {name} from Python")
+    print({"client_host": client_host})
     return generate_html_response()
 
 def fake_decode_token(token):
@@ -150,7 +177,7 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
 def read_guitar(guitar_id: int, db: Session = Depends(get_db)):
     db_guitar = crud.get_guitar(db, guitar_id=guitar_id)
     if db_guitar is None:
-        raise HTTPException(status_code=404, detail="Guitar not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Guitar not found")
     return db_guitar
 
 
@@ -185,3 +212,10 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+
+# Upload file
+@app.post("/files/")
+async def create_file(file: bytes = File()):
+    data = cloudinary.uploader.upload(file)
+    return data
