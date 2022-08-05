@@ -1,10 +1,12 @@
+from hashlib import algorithms_available
 from typing import List, Union
 from datetime import datetime, timedelta
 from pydantic import BaseSettings
 import os
+import time
 
 
-from fastapi import Depends, FastAPI, HTTPException, status, Request, UploadFile, File
+from fastapi import Depends, FastAPI, HTTPException, status, Request, UploadFile, File, BackgroundTasks
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,13 +21,18 @@ class Settings(BaseSettings):
     cloud_name: str 
     api_key: str
     api_secret: str 
-
+    secret_key: str
+    algorithm: str
+    access_token_expire_minutes: int
+    
     class Config:
         env_file = ".env"
+
 settings = Settings()
 
 # cloudinary
 import cloudinary
+
 cloudinary.config( 
   cloud_name = settings.cloud_name, 
   api_key = settings.api_key, 
@@ -36,9 +43,7 @@ cloudinary.config(
 import cloudinary.uploader
 import cloudinary.api
 
-SECRET_KEY = "c6b44138ac4d698905bfd995ae31766f45ef0d6a843319517748802305e3a4f3"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -117,7 +122,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
@@ -144,7 +149,7 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
@@ -210,7 +215,7 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
 
 
@@ -218,4 +223,28 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
 @app.post("/files/")
 async def create_file(file: bytes = File()):
     data = cloudinary.uploader.upload(file)
-    return data
+    if "secure_url" not in data:
+        raise HTTPException(status_code=404, detail="Image could not be uploaded")
+    return {"secure_url": data["secure_url"]}
+
+# middlewares
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    print("This is a middleware")
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+    print(process_time)
+    return response
+
+# background tasks
+def write_notification(email: str, message=""):
+    with open("log.txt", mode="w") as email_file:
+        content = f"notification for {email}: {message}"
+        email_file.write(content)
+
+@app.get("/send-notification/{email}")
+async def send_notification(email: str, background_tasks: BackgroundTasks):
+    background_tasks.add_task(write_notification, email, message="some notification")
+    return {"message": "Notification sent in the background"}
