@@ -6,7 +6,7 @@ import os
 import time
 
 
-from fastapi import Depends, FastAPI, HTTPException, status, Request, UploadFile, File, BackgroundTasks
+from fastapi import Depends, FastAPI, HTTPException, status, Request, Form, File, BackgroundTasks
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
@@ -154,7 +154,6 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}    
-    
 
 
 @app.post("/users/", response_model=schemas.User)
@@ -186,8 +185,8 @@ def read_guitar(guitar_id: int, db: Session = Depends(get_db)):
     return db_guitar
 
 
-# @app.get("/guitars/", response_model=List[schemas.Guitar], dependencies=[Depends(get_current_user)])
-@app.get("/guitars/", response_model=List[schemas.Guitar])
+@app.get("/guitars/", response_model=List[schemas.Guitar], dependencies=[Depends(get_current_user)])
+# @app.get("/guitars/", response_model=List[schemas.Guitar])
 def read_guitars(q: Union[str, None] = None, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):    
     guitars = crud.get_guitars(db, skip=skip, limit=limit, q=q)
     return guitars
